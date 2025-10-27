@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        if (Schema::hasTable('applications') && !Schema::hasColumn('applications', 'grade_photo')) {
+            Schema::table('applications', function (Blueprint $table) {
+                $table->string('grade_photo')->nullable()->after('reason_for_application');
+            });
+        }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        if (Schema::hasTable('applications') && Schema::hasColumn('applications', 'grade_photo')) {
+            Schema::table('applications', function (Blueprint $table) {
+                $table->dropColumn('grade_photo');
+            });
+        }
+    }
+};

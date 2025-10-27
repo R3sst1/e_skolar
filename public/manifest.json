@@ -1,0 +1,97 @@
+{
+  "name": "SureScholarShip - Scholarship Management System",
+  "short_name": "SureScholarShip",
+  "description": "Comprehensive scholarship management system for students and administrators",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/Images/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Images/logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/Images/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/Images/logo.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "My Applications",
+      "short_name": "Applications",
+      "description": "View your scholarship applications",
+      "url": "/applications",
+      "icons": [
+        {
+          "src": "/Images/logo.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "My Disbursements",
+      "short_name": "Disbursements",
+      "description": "View your disbursements",
+      "url": "/my-disbursements",
+      "icons": [
+        {
+          "src": "/Images/logo.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Submit Feedback",
+      "short_name": "Feedback",
+      "description": "Submit feedback about the program",
+      "url": "/feedback/create",
+      "icons": [
+        {
+          "src": "/Images/logo.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/Images/illustration.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "SureScholarShip Dashboard"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+} 

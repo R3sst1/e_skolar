@@ -1,0 +1,15 @@
+---
+description: Rules for Scholarship System with Icewall CSS + JS
+globs:
+alwaysApply: true
+---
+
+Use Laravel 10+ with Livewire 3 for all features in this project.
+Integrate Icewall by including its CSS and JS files from /public.
+Use Icewall’s Tailwind-based classes and JS components for styling and interactions.
+Keep all UI consistent with Icewall’s design (sidebar, modals, tables, forms).
+Applicants must be able to apply, upload documents, and track their status.
+Admins must approve/reject applications with reasons stored in Action History.
+SuperAdmin manages users and system configurations.
+Use Blade templates with Tailwind CSS utilities matching Icewall style.
+Store uploaded documents in storage/app/public/applications and validate with FormRequests.
