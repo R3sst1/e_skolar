@@ -109,6 +109,7 @@ Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'ind
     Route::get('/disbursements', [\App\Http\Controllers\DisbursementController::class, 'index'])->name('disbursements.index');
     Route::get('/disbursements/create', [\App\Http\Controllers\DisbursementController::class, 'create'])->name('disbursements.create');
     Route::post('/disbursements/batches', [\App\Http\Controllers\DisbursementController::class, 'storeBatch'])->name('disbursements.batches.store');
+    Route::get('/disbursements/consolidated-transactions', [\App\Http\Controllers\DisbursementController::class, 'consolidatedTransactions'])->name('disbursements.consolidated-transactions');
     Route::get('/disbursements/scholars-by-program', [\App\Http\Controllers\DisbursementController::class, 'getScholarsByProgram'])->name('disbursements.scholars-by-program');
     Route::get('/disbursements/allocation-logs', [\App\Http\Controllers\DisbursementController::class, 'allocationLogs'])->name('disbursements.allocation-logs');
     Route::get('/disbursements/{id}', [\App\Http\Controllers\DisbursementController::class, 'show'])->name('disbursements.show');

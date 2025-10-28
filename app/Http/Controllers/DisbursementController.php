@@ -44,10 +44,16 @@ class DisbursementController extends Controller
             'total_amount' => DisbursementBatch::sum('total_amount'),
         ];
 
-        // Get total allocated budget for Scholarship Office (office_id = 6)
-        $totalAllocated = AllocationLog::forOffice(6)->allocations()->sum('amount');
-        $totalDisbursed = AllocationLog::forOffice(6)->disbursements()->sum('amount');
-        $remainingBalance = $totalAllocated - $totalDisbursed;
+        // Get allocated budget from E-Kalinga for our office (office_id = 3)
+        $ekTotalAllocated = \App\Models\Ekalinga\BudgetAllocations::where('office_id', 3)
+            ->whereIn('status', ['approved', 'active', 'acive']) // Include typo for compatibility
+            ->sum('amount');
+
+        // Disbursed is tracked locally via allocation logs history (disbursement entries only)
+        $totalDisbursed = AllocationLog::forOffice(3)->disbursements()->sum('amount');
+
+        $totalAllocated = $ekTotalAllocated; // shown for UI consistency
+        $remainingBalance = max(0, $totalAllocated - $totalDisbursed);
 
         // Get scholarship program budget information
         $scholarshipBudgets = \App\Models\ScholarshipProgram::where('type', 'budgeted')
@@ -150,6 +156,10 @@ class DisbursementController extends Controller
         }
     }
 
+    /**
+     * Direct Disbursement: Immediately disburse funds and log the transaction
+     * No pending/approval workflow - funds are disbursed directly upon submission
+     */
     public function storeBatch(Request $request)
     {
         if (!Auth::user()->isAdmin() && !Auth::user()->isSuperAdmin()) {
@@ -188,10 +198,12 @@ class DisbursementController extends Controller
                 }
             }
 
-            // Check allocated budget for Scholarship Office (office_id = 6)
-            $totalAllocated = AllocationLog::forOffice(6)->allocations()->sum('amount');
-            $totalDisbursed = AllocationLog::forOffice(6)->disbursements()->sum('amount');
-            $remainingBalance = $totalAllocated - $totalDisbursed;
+            // Check allocated budget from E-Kalinga for our office (office_id = 3)
+            $ekTotalAllocated = \App\Models\Ekalinga\BudgetAllocations::where('office_id', 3)
+                ->whereIn('status', ['approved', 'active', 'acive']) // Include typo for compatibility
+                ->sum('amount');
+            $totalDisbursed = AllocationLog::forOffice(3)->disbursements()->sum('amount');
+            $remainingBalance = max(0, $ekTotalAllocated - $totalDisbursed);
 
             if ($totalAmount > $remainingBalance) {
                 $deficit = $totalAmount - $remainingBalance;
@@ -199,9 +211,31 @@ class DisbursementController extends Controller
                 return redirect()->back()->with('error', 'Insufficient allocated budget. You need ₱' . number_format($deficit, 2) . ' more. Current remaining balance: ₱' . number_format($remainingBalance, 2) . '. Please request additional budget allocation from E-Kalinga system.');
             }
 
+            // Determine if single or batch disbursement
+            $isSingleDisbursement = $scholars->count() === 1;
+            
+            // Generate reference number based on type
+            if ($isSingleDisbursement) {
+                // For single disbursement: DISB-XXX format
+                $latestDisb = DisbursementBatch::where('reference_number', 'like', 'DISB-%')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                $nextNumber = $latestDisb ? (intval(substr($latestDisb->reference_number, 5)) + 1) : 1;
+                $referenceNumber = 'DISB-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+            } else {
+                // For batch disbursement: BATCH-YYYY-XXXX format
+                $year = date('Y');
+                $latestBatch = DisbursementBatch::where('reference_number', 'like', 'BATCH-' . $year . '-%')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                $nextNumber = $latestBatch ? (intval(substr($latestBatch->reference_number, -4)) + 1) : 1;
+                $referenceNumber = 'BATCH-' . $year . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            }
+            
             // Create disbursement batch and immediately disburse
             $batch = DisbursementBatch::create([
                 'scholarship_program_id' => $request->scholarship_program_id,
+                'reference_number' => $referenceNumber,
                 'status' => 'disbursed', // Directly disburse instead of pending
                 'total_amount' => $totalAmount,
                 'remarks' => $request->remarks
@@ -231,18 +265,33 @@ class DisbursementController extends Controller
 
             // Log the disbursement in allocation logs
             AllocationLog::create([
-                'office_id' => 6, // Scholarship Office ID
+                'office_id' => 3, // Scholarship Office ID
                 'allocated_by' => Auth::id(),
-                'disbursement_batch_id' => $batch->id,
+                'disbursement_batch_id' => $isSingleDisbursement ? null : $batch->id,
                 'transaction_type' => 'disbursement',
                 'amount' => $totalAmount,
-                'description' => 'Disbursement for ' . $scholarshipProgram->name . ' - ' . $scholars->count() . ' scholars',
-                'reference_number' => $batch->reference_number ?? 'BATCH-' . $batch->id,
+                'description' => 'Disbursement for ' . $scholarshipProgram->name . ' - ' . $scholars->count() . ' scholar' . ($scholars->count() > 1 ? 's' : ''),
+                'reference_number' => $batch->reference_number,
             ]);
+
+            // Create consolidated transaction entries for E-Kalinga (one per scholar)
+            foreach ($scholars as $scholar) {
+                $individualAmount = $request->scholar_amounts[$scholar->id] ?? $scholarshipProgram->per_scholar_amount ?? 0;
+                
+                \App\Models\Ekalinga\ConsolidatedTransaction::create([
+                    'office_id' => 3, // Our Scholarship Office ID
+                    'total_budget' => $individualAmount,
+                    'budget' => $individualAmount,
+                    'beneficiary_id' => $scholar->id,
+                    'budget_received' => null, // Will be filled by E-Kalinga
+                    'status' => 'endorsed',
+                    'remarks' => $batch->reference_number,
+                ]);
+            }
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Disbursement completed successfully for ' . $scholars->count() . ' scholars. Total amount: ₱' . number_format($totalAmount, 2));
+            return redirect()->back()->with('success', 'Disbursement completed successfully for ' . $scholars->count() . ' scholars. Total amount: ₱' . number_format($totalAmount, 2) . '. Consolidated transactions sent to E-Kalinga.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -385,7 +434,7 @@ class DisbursementController extends Controller
             abort(403);
         }
 
-        $query = AllocationLog::forOffice(6)->with('allocatedBy', 'disbursementBatch');
+        $query = AllocationLog::forOffice(3)->with('allocatedBy', 'disbursementBatch');
 
         // Apply filters
         if ($request->transaction_type) {
@@ -403,6 +452,48 @@ class DisbursementController extends Controller
         $allocationLogs = $query->latest()->paginate(20);
 
         return view('disbursements.allocation-logs', compact('allocationLogs'));
+    }
+
+    public function consolidatedTransactions(Request $request)
+    {
+        if (!Auth::user()->isAdmin() && !Auth::user()->isSuperAdmin()) {
+            abort(403);
+        }
+
+        // Get consolidated transactions for our office (office_id = 3)
+        $query = \App\Models\Ekalinga\ConsolidatedTransaction::where('office_id', 3);
+
+        // Apply filters
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('beneficiary_id', 'like', '%' . $request->search . '%')
+                  ->orWhere('remarks', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->date_from) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $transactions = $query->latest()->paginate(20);
+
+        // Get statistics
+        $stats = [
+            'total_transactions' => \App\Models\Ekalinga\ConsolidatedTransaction::where('office_id', 3)->count(),
+            'endorsed' => \App\Models\Ekalinga\ConsolidatedTransaction::where('office_id', 3)->where('status', 'endorsed')->count(),
+            'total_budget' => \App\Models\Ekalinga\ConsolidatedTransaction::where('office_id', 3)->sum('total_budget'),
+            'budget_received' => \App\Models\Ekalinga\ConsolidatedTransaction::where('office_id', 3)->whereNotNull('budget_received')->sum('budget_received'),
+        ];
+
+        return view('disbursements.consolidated-transactions', compact('transactions', 'stats'));
     }
 
 }

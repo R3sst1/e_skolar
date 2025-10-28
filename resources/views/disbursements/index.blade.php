@@ -6,17 +6,17 @@
     <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
         <h2 class="intro-y text-lg font-medium mr-auto">Disbursement Management</h2>
         <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
-            <a href="{{ route('disbursements.allocation-logs') }}" class="btn btn-outline-secondary shadow-md mr-2">
-                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> View Logs
+            <a href="{{ route('disbursements.consolidated-transactions') }}" class="btn btn-outline-secondary shadow-md mr-2">
+                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> View Consolidated Transactions
             </a>
             <button class="btn btn-primary shadow-md mr-2" data-tw-toggle="modal" data-tw-target="#create-disbursement-modal">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Create Disbursement
+                <i data-lucide="dollar-sign" class="w-4 h-4 mr-2"></i> Disburse Funds
             </button>
         </div>
     </div>
     
     <!-- Statistics Cards -->
-    <div class="col-span-12 lg:col-span-3 xxl:col-span-3">
+    <!-- <div class="col-span-12 lg:col-span-3 xxl:col-span-3">
         <div class="box p-5">
             <div class="flex items-center">
                 <div class="text-slate-500">Total Batches</div>
@@ -55,7 +55,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Budget Summary Section -->
     <div class="col-span-12">
@@ -65,19 +65,19 @@
                 <div class="flex-1 text-center">
                     <div class="text-2xl lg:text-3xl font-bold text-primary mb-1">₱{{ number_format($totalAllocated ?? 0, 2) }}</div>
                     <div class="text-slate-600 font-medium">Total Allocated Budget</div>
-                    <div class="text-sm text-slate-500">From E-Kalinga System</div>
+                    <!-- <div class="text-sm text-slate-500">From E-Kalinga System</div> -->
                 </div>
                 <div class="flex-1 text-center">
                     <div class="text-2xl lg:text-3xl font-bold text-warning mb-1">₱{{ number_format($totalDisbursed ?? 0, 2) }}</div>
                     <div class="text-slate-600 font-medium">Total Disbursed</div>
-                    <div class="text-sm text-slate-500">Amount Released to Scholars</div>
+                    <!-- <div class="text-sm text-slate-500">Amount Released to Scholars</div> -->
                 </div>
                 <div class="flex-1 text-center">
                     <div class="text-2xl lg:text-3xl font-bold {{ ($remainingBalance ?? 0) > 0 ? 'text-success' : 'text-danger' }} mb-1">
                         ₱{{ number_format($remainingBalance ?? 0, 2) }}
                     </div>
                     <div class="text-slate-600 font-medium">Remaining Balance</div>
-                    <div class="text-sm text-slate-500">Available for Disbursement</div>
+                    <!-- <div class="text-sm text-slate-500">Available for Disbursement</div> -->
                 </div>
             </div>
             @if(($remainingBalance ?? 0) <= 0)
@@ -140,61 +140,86 @@
     </div>
     @endif
 
-    <!-- Data List -->
-    <div class="intro-y col-span-12 overflow-auto lg:overflow-visible">
-        <div class="max-w-7xl mx-auto px-4">
-            <table class="table table-report -mt-2 w-full text-center">
-                <thead>
-                    <tr>
-                        <th class="w-40 !py-4">REFERENCE</th>
-                        <th class="w-40">PROGRAM / META</th>
-                        <th class="text-center">STATUS</th>
-                        <th>DATE</th>
-                        <th class="w-40 text-right">TOTAL</th>
-                        <th class="text-center whitespace-nowrap">ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($disbursementBatches ?? [] as $batch)
-                    @php
-                        $status = $batch->status;
-                        $statusIcon = $status === 'disbursed' ? 'check-square' : ($status === 'reviewed' ? 'check-square' : 'clock');
-                        $statusClass = $status === 'disbursed' ? 'text-success' : ($status === 'reviewed' ? 'text-primary' : 'text-warning');
-                    @endphp
-                    <tr class="intro-x">
-                        <td class="w-40 !py-4">
-                            <a href="{{ route('disbursements.show', $batch->id) }}" class="underline decoration-dotted whitespace-nowrap">#{{ $batch->reference_number }}</a>
-                        </td>
-                        <td class="w-40">
-                            <a href="{{ route('disbursements.show', $batch->id) }}" class="font-medium whitespace-nowrap">{{ optional($batch->scholarshipProgram)->name ?? 'Scholarship Program' }}</a>
-                            <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">{{ $batch->disbursementBatchStudents->count() }} students</div>
-                        </td>
-                        <td class="text-center">
-                            <div class="flex items-center justify-center whitespace-nowrap {{ $statusClass }}">
-                                <i data-lucide="{{ $statusIcon }}" class="w-4 h-4 mr-2"></i> {{ ucfirst($status) }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">{{ $batch->created_at->format('d M, H:i') }}</div>
-                        </td>
-                        <td class="w-40 text-right">
-                            <div>₱{{ number_format($batch->total_amount ?? 0, 2) }}</div>
-                        </td>
-                        <td class="table-report__action">
-                            <div class="flex justify-center items-center">
-                                <a class="flex items-center text-primary whitespace-nowrap" href="{{ route('disbursements.show', $batch->id) }}">
-                                    <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> View Details
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-10 text-slate-500">No disbursement batches found.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    <!-- Disbursement Logs -->
+    <div class="intro-y col-span-12">
+        <div class="box p-5">
+            <h3 class="text-lg font-medium mb-4">Disbursement Logs</h3>
+            <div class="overflow-x-auto">
+                <table class="table table-report w-full">
+                    <thead>
+                        <tr>
+                            <th class="!py-4">REFERENCE</th>
+                            <th>PROGRAM / RECIPIENT</th>
+                            <th class="text-center">STATUS</th>
+                            <th>DATE</th>
+                            <th class="text-right">TOTAL AMOUNT</th>
+                            <th class="text-center">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($disbursementBatches ?? [] as $batch)
+                        @php
+                            $isBatch = $batch->disbursementBatchStudents->count() > 1;
+                            $singleScholar = $isBatch ? null : $batch->disbursementBatchStudents->first();
+                            $statusClass = $batch->status === 'disbursed' ? 'text-success' : 'text-warning';
+                        @endphp
+                        <tr class="intro-x">
+                            <td class="!py-4">
+                                <div class="font-medium text-primary">#{{ $batch->reference_number }}</div>
+                            </td>
+                            <td>
+                                <div class="font-medium">{{ optional($batch->scholarshipProgram)->name ?? 'N/A' }}</div>
+                                @if($isBatch)
+                                    <div class="text-slate-500 text-xs mt-1">
+                                        <i data-lucide="users" class="w-3 h-3 inline mr-1"></i>
+                                        Batch Disbursement ({{ $batch->disbursementBatchStudents->count() }} scholars)
+                                    </div>
+                                @else
+                                    <div class="text-slate-500 text-xs mt-1">
+                                        @if($singleScholar && $singleScholar->application && $singleScholar->application->user)
+                                            <i data-lucide="user" class="w-3 h-3 inline mr-1"></i>
+                                            {{ $singleScholar->application->user->first_name }} {{ $singleScholar->application->user->last_name }}
+                                        @else
+                                            Single Disbursement
+                                        @endif
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ $statusClass }} bg-{{ $batch->status === 'disbursed' ? 'success' : 'warning' }}/10">
+                                    {{ ucfirst($batch->status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="text-slate-600">{{ $batch->created_at->format('M d, Y') }}</div>
+                                <div class="text-slate-500 text-xs">{{ $batch->created_at->format('h:i A') }}</div>
+                            </td>
+                            <td class="text-right">
+                                <div class="font-medium text-success">₱{{ number_format($batch->total_amount ?? 0, 2) }}</div>
+                            </td>
+                            <td class="text-center">
+                                @if($isBatch)
+                                    <button class="btn btn-sm btn-outline-primary" data-tw-toggle="modal" data-tw-target="#view-batch-modal-{{ $batch->id }}">
+                                        <i data-lucide="eye" class="w-4 h-4 mr-1"></i> View Batch
+                                    </button>
+                                @else
+                                    <button class="btn btn-sm btn-outline-primary" data-tw-toggle="modal" data-tw-target="#view-profile-modal-{{ $batch->id }}">
+                                        <i data-lucide="user" class="w-4 h-4 mr-1"></i> View Profile
+                                    </button>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-10 text-slate-500">
+                                <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-3 text-slate-300"></i>
+                                <p>No disbursements recorded yet.</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     
@@ -206,12 +231,12 @@
     @endif
 </div>
 
-<!-- Create Disbursement Batch Modal -->
+<!-- Direct Disbursement Modal -->
 <div id="create-disbursement-modal" class="modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="font-medium text-base mr-auto">Create Disbursement Batch</h2>
+                <h2 class="font-medium text-base mr-auto">Disburse Scholarship Funds</h2>
                 <button data-tw-dismiss="modal" class="btn btn-outline-secondary hidden sm:flex">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -298,8 +323,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
-                    <button type="submit" class="btn btn-primary w-20" id="submit-btn" disabled>Create</button>
+                    <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary w-32 mr-1">Cancel</button>
+                    <button type="submit" class="btn btn-primary w-40" id="submit-btn" disabled>
+                        <i data-lucide="dollar-sign" class="w-4 h-4 mr-1"></i> Disburse Now
+                    </button>
                 </div>
             </form>
         </div>
@@ -649,4 +676,169 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 
+<!-- View Batch Modals -->
+@foreach($disbursementBatches ?? [] as $batch)
+    @if($batch->disbursementBatchStudents->count() > 1)
+    <div id="view-batch-modal-{{ $batch->id }}" class="modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Batch Disbursement Details - #{{ $batch->reference_number }}</h2>
+                    <button data-tw-dismiss="modal" class="btn btn-outline-secondary hidden sm:flex">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <div class="text-slate-600 text-sm">Program</div>
+                            <div class="font-medium mt-1">{{ optional($batch->scholarshipProgram)->name ?? 'N/A' }}</div>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <div class="text-slate-600 text-sm">Total Amount</div>
+                            <div class="font-medium text-success mt-1">₱{{ number_format($batch->total_amount ?? 0, 2) }}</div>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <div class="text-slate-600 text-sm">Number of Scholars</div>
+                            <div class="font-medium mt-1">{{ $batch->disbursementBatchStudents->count() }}</div>
+                        </div>
+                    </div>
+                    
+                    @if($batch->remarks)
+                    <div class="mb-6 p-4 bg-info/10 border border-info/20 rounded-lg">
+                        <div class="text-sm font-medium text-slate-700 mb-1">Remarks</div>
+                        <div class="text-slate-600">{{ $batch->remarks }}</div>
+                    </div>
+                    @endif
+
+                    <div class="overflow-x-auto">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Scholar Name</th>
+                                    <th>Student ID</th>
+                                    <th>Program</th>
+                                    <th class="text-right">Amount Disbursed</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($batch->disbursementBatchStudents as $index => $batchStudent)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>
+                                        @if($batchStudent->application && $batchStudent->application->user)
+                                            <div class="font-medium">{{ $batchStudent->application->user->first_name }} {{ $batchStudent->application->user->last_name }}</div>
+                                            <div class="text-slate-500 text-xs">{{ $batchStudent->application->user->email }}</div>
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td>{{ $batchStudent->application->user->student_id ?? 'N/A' }}</td>
+                                    <td>{{ optional($batchStudent->application->scholarship)->name ?? 'N/A' }}</td>
+                                    <td class="text-right font-medium text-success">₱{{ number_format($batchStudent->requested_amount ?? 0, 2) }}</td>
+                                    <td class="text-center">
+                                        <span class="px-2 py-1 rounded text-xs bg-success/10 text-success">{{ ucfirst($batchStudent->status) }}</span>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
+
+<!-- View Profile Modals -->
+@foreach($disbursementBatches ?? [] as $batch)
+    @if($batch->disbursementBatchStudents->count() == 1)
+    @php
+        $batchStudent = $batch->disbursementBatchStudents->first();
+        $scholar = $batchStudent->application->user ?? null;
+    @endphp
+    <div id="view-profile-modal-{{ $batch->id }}" class="modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Scholar Profile - #{{ $batch->reference_number }}</h2>
+                    <button data-tw-dismiss="modal" class="btn btn-outline-secondary hidden sm:flex">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if($scholar)
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="font-medium text-slate-700 mb-4">Scholar Information</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="text-slate-600 text-sm">Full Name</div>
+                                    <div class="font-medium">{{ $scholar->first_name }} {{ $scholar->middle_name }} {{ $scholar->last_name }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-600 text-sm">Student ID</div>
+                                    <div class="font-medium">{{ $scholar->student_id ?? 'N/A' }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-600 text-sm">Email</div>
+                                    <div class="font-medium">{{ $scholar->email }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-600 text-sm">Contact Number</div>
+                                    <div class="font-medium">{{ $scholar->contact_number ?? 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-medium text-slate-700 mb-4">Disbursement Details</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="text-slate-600 text-sm">Scholarship Program</div>
+                                    <div class="font-medium">{{ optional($batch->scholarshipProgram)->name ?? 'N/A' }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-600 text-sm">Amount Disbursed</div>
+                                    <div class="font-medium text-success text-2xl">₱{{ number_format($batchStudent->requested_amount ?? 0, 2) }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-600 text-sm">Date Disbursed</div>
+                                    <div class="font-medium">{{ $batch->created_at->format('F d, Y h:i A') }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-600 text-sm">Status</div>
+                                    <div><span class="px-3 py-1 rounded text-sm bg-success/10 text-success font-medium">{{ ucfirst($batchStudent->status) }}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($batch->remarks)
+                    <div class="mt-6 p-4 bg-info/10 border border-info/20 rounded-lg">
+                        <div class="text-sm font-medium text-slate-700 mb-1">Remarks</div>
+                        <div class="text-slate-600">{{ $batch->remarks }}</div>
+                    </div>
+                    @endif
+                    @else
+                    <div class="text-center py-8 text-slate-500">
+                        <i data-lucide="alert-circle" class="w-16 h-16 mx-auto mb-3 text-slate-300"></i>
+                        <p>Scholar information not available</p>
+                    </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-tw-dismiss="modal" class="btn btn-outline-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
 

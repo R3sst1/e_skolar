@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Etala\DemographicIdentifications;
-use App\Models\Etala\ValidatedBenefeciaries;
+use App\Models\Etala\ValidBenificiaries;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,15 +47,15 @@ class ResidenceDataController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        // Get validation status for all residents in current page
-        $residentIds = $demographics->pluck('id')->toArray();
+        // Get validation status by checking E-Kalinga val_benificiaries table
         $validatedResidentIds = [];
         
         try {
-            $validatedResidentIds = ValidatedBenefeciaries::hasWhereValidation($residentIds);
+            // Check which residents are validated in E-Kalinga by matching first and last names
+            $validatedResidentIds = ValidBenificiaries::getValidatedDemographicIds($demographics);
         } catch (\Exception $e) {
             // If external connection fails, continue without validation status
-            \Log::warning('Failed to fetch validation status from val_beneficiaries: ' . $e->getMessage());
+            \Log::warning('Failed to fetch validation status from e_tala val_benificiaries: ' . $e->getMessage());
         }
 
         // Debug: Log some sample data to help identify issues
